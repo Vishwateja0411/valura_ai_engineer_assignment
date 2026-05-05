@@ -1,4 +1,5 @@
 import re
+import os
 from typing import Any
 
 from src.schemas import ClassificationResult
@@ -306,6 +307,55 @@ def _parse_llm_result(raw: Any) -> ClassificationResult | None:
     )
 
 
+def _call_openai_classifier(query: str, prior_user_turns: list[str]) -> dict | None:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return None
+
+    from openai import OpenAI
+
+    client = OpenAI(api_key=api_key)
+    # client = OpenAI(
+    # api_key=api_key,
+    # base_url=os.getenv("OPENAI_BASE_URL"),
+    # )
+
+    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    agents = ", ".join(sorted(AGENTS - {"portfolio_query"}))
+    prompt = (
+        "Classify this finance assistant query. Return only JSON with keys: "
+        "intent, agent, entities, safety. Agent must be one of: "
+        f"{agents}. Safety is informational only because a local guard already ran. "
+        "Use prior_user_turns only for clear follow-ups, not topic switches.\n\n"
+        f"prior_user_turns: {prior_user_turns}\n"
+        f"query: {query}"
+    )
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a strict JSON classifier for a finance assistant.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        response_format={"type": "json_object"},
+        max_tokens=500,
+    )
+    return _json_loads(response.choices[0].message.content)
+
+
+def _json_loads(text: str) -> dict | None:
+    import json
+
+    try:
+        data = json.loads(text)
+    except (TypeError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
 def classify(query: str, prior_user_turns: list[str] | None = None, llm: Any = None) -> ClassificationResult:
     prior_user_turns = prior_user_turns or []
 
@@ -316,5 +366,13 @@ def classify(query: str, prior_user_turns: list[str] | None = None, llm: Any = N
                 return parsed
         except Exception:
             pass
+        return _fallback_classify(query, prior_user_turns)
+
+    try:
+        parsed = _parse_llm_result(_call_openai_classifier(query, prior_user_turns))
+        if parsed is not None:
+            return parsed
+    except Exception:
+        pass
 
     return _fallback_classify(query, prior_user_turns)
