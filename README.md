@@ -6,8 +6,6 @@ This is a small FastAPI service for the Valura AI assignment. It implements the 
 SSE endpoint -> local safety guard -> intent classifier -> router -> portfolio health agent or stub agent
 ```
 
-The implementation is intentionally simple and readable. The goal was to build a working fresher-friendly MVP that handles the required edge cases without hiding the logic behind too many abstractions.
-
 ## What Is Implemented
 
 - Local safety guard with no LLM or network call
