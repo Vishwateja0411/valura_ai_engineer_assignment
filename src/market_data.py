@@ -13,5 +13,12 @@ def get_benchmark_name(user: dict) -> str:
     return "S&P 500"
 
 
+def _safe_float(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def cost_basis_position_value(position: dict) -> float:
-    return float(position.get("quantity", 0)) * float(position.get("avg_cost", 0))
+    return _safe_float(position.get("quantity")) * _safe_float(position.get("avg_cost"))

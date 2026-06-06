@@ -4,7 +4,9 @@ from typing import Any
 
 from src.schemas import ClassificationResult
 
-
+#Agents are the different modules or components of the finance assistant that can handle specific types of queries.
+#  Each agent is designed to specialize in a particular area of finance, such as portfolio health, market research, investment strategy, etc. 
+# The classify function will determine which agent is best suited to handle a given user query based on the content of the query and any prior user turns.
 AGENTS = {
     "portfolio_health",
     "portfolio_query",
@@ -19,7 +21,7 @@ AGENTS = {
     "general_query",
 }
 
-
+# COMPANY_TICKERS is a mapping of common company names and their variations to their stock ticker symbols.
 COMPANY_TICKERS = {
     "apple": "AAPL",
     "aapl": "AAPL",

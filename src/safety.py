@@ -1,8 +1,9 @@
+# re used to clean whitespace in text
 import re
-
+# SafetyVerdict is a dataclass that represents the result of a safety check, including whether the query is blocked, the category of the block, and a message explaining the block.
 from src.schemas import SafetyVerdict
-
-
+# These messages are shown when a query is blocked for a given category. 
+# They explain why the query was blocked and what the user can ask instead.
 BLOCK_MESSAGES = {
     "insider_trading": (
         "I can't help with trading on confidential or material non-public "
@@ -41,6 +42,10 @@ BLOCK_MESSAGES = {
 }
 
 
+# Queries that look educational are allowed, even if they contain concerning language. 
+# This is to allow users to ask about concerning topics in an educational way without being blocked.
+#The presence of educational language doesn't automatically allow a query, but it does prevent it from being blocked solely for containing concerning language.
+
 EDUCATIONAL_STARTS = (
     "what is",
     "what are",
@@ -53,27 +58,31 @@ EDUCATIONAL_STARTS = (
     "is ",
 )
 
-
+# _clean is a helper function that lowercases the text, collapses multiple whitespace characters into a single space, and trims leading and trailing whitespace. 
+# This makes it easier to check for the presence of certain keywords or phrases in a consistent way.
 def _clean(text: str) -> str:
     return re.sub(r"\s+", " ", text.lower()).strip()
 
-
+# _looks_educational checks if the query starts with any of the educational phrases or contains certain keywords that suggest the user is asking about a topic in an educational way.
 def _looks_educational(query: str) -> bool:
     q = _clean(query)
     return q.startswith(EDUCATIONAL_STARTS) or "penalt" in q or "requirements" in q
 
-
+# _block is a helper function that creates a SafetyVerdict indicating that the query is blocked for a given category, and includes the appropriate message from BLOCK_MESSAGES.
 def _block(category: str) -> SafetyVerdict:
     return SafetyVerdict(blocked=True, category=category, message=BLOCK_MESSAGES[category])
 
-
+# check is the main function that takes a user query as input and returns a SafetyVerdict indicating whether the query is blocked and, if so, for what reason.
+# It first cleans the query and checks if it's empty. If it is, it allows it. Then it checks if the query looks educational. 
+# If it doesn't look educational, it checks for various concerning patterns in the query that would indicate insider trading, market manipulation, money laundering, guaranteed returns, reckless advice, sanctions evasion, or fraud. 
+# If any of those patterns are found, it blocks the query with the appropriate category. If none of those patterns are found, it allows the query.
 def check(query: str) -> SafetyVerdict:
     q = _clean(query)
     if not q:
         return SafetyVerdict(blocked=False)
 
     educational = _looks_educational(q)
-
+# If the query doesn't look educational, we check for various concerning patterns. If any of those patterns are found, we block the query with the appropriate category.
     if not educational:
         if (
             ("confidential" in q and any(word in q for word in ("trade", "buy", "shares", "merger", "news")))
@@ -84,7 +93,7 @@ def check(query: str) -> SafetyVerdict:
             or ("inside" in q and any(word in q for word in ("tip", "information", "news")) and any(word in q for word in ("buy", "sell", "trade")))
         ):
             return _block("insider_trading")
-
+# The following patterns are checked for market manipulation: pump up, pump-and-dump, coordinated buying, wash trade, spoofing, and layering.
         if (
             "pump up" in q
             or ("pump-and-dump" in q and any(word in q for word in ("join", "run", "start")))
@@ -97,7 +106,7 @@ def check(query: str) -> SafetyVerdict:
             or ("layering" in q and any(word in q for word in ("help me", "do", "place")))
         ):
             return _block("market_manipulation")
-
+# The following patterns are checked for money laundering: without reporting, avoid the 10k, avoid reporting, obscure the source, layer my trades, hide trading profits, and hide/evade/avoid tax authorities.
         if (
             "without reporting" in q
             or "avoid the 10k" in q
@@ -108,7 +117,7 @@ def check(query: str) -> SafetyVerdict:
             or ("tax authorities" in q and any(word in q for word in ("hide", "evade", "avoid")))
         ):
             return _block("money_laundering")
-
+# The following patterns are checked for guaranteed returns: guarantee me, promise me, 100% certain, certain to go up, foolproof way, and risk-free returns.
         if (
             "guarantee me" in q
             or "promise me" in q
@@ -118,7 +127,7 @@ def check(query: str) -> SafetyVerdict:
             or ("risk-free" in q and any(word in q for word in ("stock", "equity", "crypto", "return")))
         ):
             return _block("guaranteed_returns")
-
+# The following patterns are checked for reckless advice: all my retirement savings, entire emergency fund, mortgage my house, margin loan to buy, borrow money to buy, and put it all into options/crypto/single stock.
         if (
             "all my retirement savings" in q
             or "entire emergency fund" in q
