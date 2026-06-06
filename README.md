@@ -143,15 +143,9 @@ Cost target reasoning:
 - Safety-blocked queries use no model call.
 - Portfolio Health itself is deterministic.
 
-<<<<<<< HEAD
-## Defence Video
 
-Video link: TODO - add unlisted YouTube URL before final submission.
-
-## What I Would Improve With Another Week
-=======
 ## What can be Improved
->>>>>>> be2853eeb18091c8b2a69b9062e2e57b9fce2aa4
+
 
 - Add real market data through `yfinance` or MCP and compute actual returns.
 - Persist memory in SQLite/Postgres.
