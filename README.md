@@ -1,6 +1,6 @@
-# Valura AI Microservice
+# Safety-Aware Multi-Agent Financial Assistant
 
-This is a small FastAPI service for the Valura AI assignment. It implements the required spine of the system:
+This is a small FastAPI service for the Safety-Aware Multi-Agent Financial Assistant. It implements the required spine of the system:
 
 ```text
 SSE endpoint -> local safety guard -> intent classifier -> router -> portfolio health agent or stub agent
